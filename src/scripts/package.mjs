@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { rm } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 import process from "node:process";
 
 function run(command, args, cwd = process.cwd(), shell = false) {
@@ -8,8 +8,12 @@ function run(command, args, cwd = process.cwd(), shell = false) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-run(process.execPath, ["scripts/check.mjs"]);
-run(process.execPath, ["scripts/build.mjs"]);
+const fromBuild = process.argv.includes("--from-build");
+if (!fromBuild) {
+  run(process.execPath, ["scripts/check.mjs"]);
+  run(process.execPath, ["scripts/build.mjs"]);
+}
+await mkdir("../.generated/release", { recursive: true });
 
 const npmArgs = [
   "exec",
