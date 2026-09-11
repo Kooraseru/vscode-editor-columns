@@ -1,0 +1,16 @@
+name: Build generated repository
+description: Build the public repository projection from canonical source.
+inputs:
+  destination:
+    description: Directory to replace with the generated projection.
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GENERATED_DESTINATION: ${{ inputs.destination }}
+      run: |
+        npm --prefix src run build
+        mkdir -p "$GENERATED_DESTINATION"
+        cp -a .generated/main/. "$GENERATED_DESTINATION/"

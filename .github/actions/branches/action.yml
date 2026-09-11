@@ -1,0 +1,11 @@
+name: Validate authored branch
+description: Require the canonical source branch.
+inputs:
+  branch:
+    description: Branch name to validate.
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: lua5.4 "$GITHUB_ACTION_PATH/main.lua" "${{ inputs.branch }}"

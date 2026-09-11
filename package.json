@@ -1,0 +1,51 @@
+{
+  "name": "vscode-editor-columns",
+  "displayName": "VS Code Editor Columns",
+  "publisher": "Kooraseru",
+  "version": "0.1.0",
+  "description": "Adds custom interactive columns and column headers to VS Code's native text editor.",
+  "icon": "assets/goofyaah.png",
+  "author": {
+    "name": "Kooraseru",
+    "email": "kooraseru.social@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kooraseru/vscode-editor-columns.git"
+  },
+  "license": "ISC",
+  "engines": {
+    "vscode": "^1.137.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["editor", "columns", "native editor", "interactive cells"],
+  "main": "./src/extension.js",
+  "types": "./src/api.d.ts",
+  "extensionKind": ["ui"],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:vscodeEditorColumns.installWorkbenchBridge",
+    "onCommand:vscodeEditorColumns.removeWorkbenchBridge"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscodeEditorColumns.installWorkbenchBridge",
+        "title": "Editor Columns: Install Workbench Bridge"
+      },
+      {
+        "command": "vscodeEditorColumns.removeWorkbenchBridge",
+        "title": "Editor Columns: Remove Workbench Bridge"
+      }
+    ]
+  },
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "package": "node scripts/package.mjs",
+    "package:built": "node scripts/package.mjs --from-build",
+    "vscode:uninstall": "node ./src/uninstall.js"
+  }
+}
