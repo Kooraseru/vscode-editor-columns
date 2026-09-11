@@ -4,7 +4,7 @@ package.path = root .. "/?.lua;" .. root .. "/.github/actions/?.lua;" .. package
 
 local command = require("lib.command")
 local required = {
-  "code", "i18n/locales.toml", "i18n/repository.toml", "i18n/releases.toml", "i18n/render.lua",
+  "src", "i18n/locales.toml", "i18n/repository.toml", "i18n/releases.toml", "i18n/render.lua",
   "repo/build.lua", "repo/config.toml", "repo/templates/README.md",
   "releases/build.lua", "releases/validate.lua", "releases/test.lua", "releases/records",
   "LICENSE", "CITATION.cff", ".github/actions",
@@ -21,7 +21,8 @@ local programs = {
   "find i18n repo releases .github/actions -name '*.lua' -print0 | xargs -0 -n1 luac5.4 -p",
   "lua5.4 i18n/validate.lua",
   "lua5.4 releases/test.lua",
-  "lua5.4 repo/build.lua " .. command.quote(os.getenv("GENERATED_DESTINATION") or ".generated"),
+  "npm --prefix src run check",
+  "npm --prefix src run build",
 }
 
 -- Windows-mounted WSL worktrees often preserve CRLF; enforce this only in the Linux CI checkout.

@@ -1,105 +1,182 @@
-name: Validate and publish source
+name: CI
 
 on:
   workflow_dispatch:
   pull_request:
-    branches: [source, main]
+    branches: [source]
   push:
     branches: [source]
 
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
-  validate:
-    name: Source contracts
+  repository-contracts:
+    name: Repository Contracts
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      - name: Set up repository tooling
-        run: sudo apt-get update && sudo apt-get install --yes lua5.4
-
-      - name: Validate authored branch
+      - name: Validate source branch
         uses: ./.github/actions/branches
         with:
           branch: ${{ github.event.pull_request.base.ref || github.ref_name }}
+      - name: Validate repository shape
+        shell: bash
+        run: |
+          required=(.github assets i18n releases repo src README.md LICENSE)
+          for path in "${required[@]}"; do test -e "$path" || { echo "Missing $path" >&2; exit 1; }; done
+          test ! -e code || { echo "Legacy code/ directory must not exist" >&2; exit 1; }
+      - name: Validate Git whitespace
+        run: git diff --check
 
-      - name: Validate source
-        uses: ./.github/actions/validate
-        with:
-          destination: ${{ runner.temp }}/lcc-lc3-generated
-          check-eol: "true"
-
-  publish:
-    name: Publish generated repository
-    needs: validate
-    if: github.event_name == 'push' && github.ref_name == 'source'
+  extension:
+    name: Extension
+    needs: repository-contracts
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate extension source
+        run: npm --prefix src run check
 
-      - name: Set up repository tooling
+  github-actions:
+    name: GitHub Actions
+    needs: repository-contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Lua
         run: sudo apt-get update && sudo apt-get install --yes lua5.4
+      - name: Parse automation Lua
+        run: find .github -name '*.lua' -print0 | xargs -0 -n1 luac5.4 -p
+      - name: Validate actions and workflows
+        run: lua5.4 .github/scripts/actionlint.lua
 
-      - name: Build public repository
+  localization:
+    name: Localization
+    needs: repository-contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Lua
+        run: sudo apt-get update && sudo apt-get install --yes lua5.4
+      - name: Validate localization
+        run: lua5.4 i18n/validate.lua
+
+  release-system:
+    name: Release System
+    needs: repository-contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Lua
+        run: sudo apt-get update && sudo apt-get install --yes lua5.4
+      - name: Validate release records
+        run: lua5.4 releases/test.lua
+
+  build-repository:
+    name: Build Repository
+    needs: [extension, localization, release-system]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Build generated repository
         uses: ./.github/actions/build-repo
         with:
-          destination: ${{ runner.temp }}/lcc-lc3-public
+          destination: ${{ runner.temp }}/vscode-editor-columns-main
+      - name: Upload generated repository
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: generated-repository
+          path: ${{ runner.temp }}/vscode-editor-columns-main
+          if-no-files-found: error
 
-      - name: Select release record
-        id: release
-        run: |
-          version="$(find releases/records -maxdepth 1 -type f -name '*.md' -printf '%f\n' \
-            | sed 's/\.md$//' \
-            | sort -t. -k1,1nr -k2,2nr -k3,3nr \
-            | head -n 1)"
-          test -n "$version"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+  package-extension:
+    name: Package Extension
+    needs: extension
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Package VSIX files
+        run: npm --prefix src run package
+      - name: Upload VSIX files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vsix-packages
+          path: .generated/release/*.vsix
+          if-no-files-found: error
 
-      - name: Replace main with generated repository
+  dependency-review:
+    name: Dependency Review
+    if: github.event_name == 'pull_request'
+    needs: repository-contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs: [repository-contracts, extension, github-actions, localization, release-system, build-repository, package-extension, dependency-review]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful CI jobs
         env:
-          SOURCE_SHA: ${{ github.sha }}
+          JOB_RESULTS: ${{ toJSON(needs) }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          git fetch origin main
-          git checkout --force -B main origin/main
-          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-          cp -a "$RUNNER_TEMP/lcc-lc3-public/." .
-          git add --all
-          if git diff --cached --quiet; then
-            echo "Generated repository is already current."
-            exit 0
+          failures="$(
+            jq -r --arg event "$EVENT_NAME" '
+              to_entries[]
+              | select(.value.result != "success" and ((.key == "dependency-review" and $event != "pull_request" and .value.result == "skipped") | not))
+              | "\(.key): \(.value.result)"
+            ' <<<"$JOB_RESULTS"
+          )"
+          if [ -n "$failures" ]; then
+            echo "Required CI jobs did not succeed:"
+            echo "$failures"
+            exit 1
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Publish source @ ${SOURCE_SHA}"
-          git push origin HEAD:main
-
-      - name: Publish source release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SOURCE_SHA: ${{ github.sha }}
-          VERSION: ${{ steps.release.outputs.version }}
-        run: |
-          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
-            gh release delete "$VERSION" --yes || true
-            git push origin --delete "refs/tags/$VERSION"
-          fi
-
-          archive="$RUNNER_TEMP/lcc-lc3.tar.gz"
-          archive_tar="$RUNNER_TEMP/lcc-lc3.tar"
-          git archive --format=tar --prefix="lcc-lc3-$VERSION/src/" "$SOURCE_SHA:code" > "$archive_tar"
-          gzip -n -c "$archive_tar" > "$archive"
-
-          gh release create "$VERSION" "$archive" \
-            --target "$SOURCE_SHA" \
-            --title "$VERSION" \
-            --notes-file "$RUNNER_TEMP/lcc-lc3-public/releases/$VERSION.md"
+          echo "All required CI jobs succeeded"
