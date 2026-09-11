@@ -69,6 +69,22 @@ jobs:
       - name: Validate actions and workflows
         run: lua5.4 .github/scripts/actionlint.lua
 
+  tests:
+    name: Tests
+    needs: extension
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Run extension tests
+        run: npm --prefix src test
+
   localization:
     name: Localization
     needs: repository-contracts
@@ -94,12 +110,18 @@ jobs:
           persist-credentials: false
       - name: Set up Lua
         run: sudo apt-get update && sudo apt-get install --yes lua5.4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - name: Validate release records
         run: lua5.4 releases/test.lua
+      - name: Resolve publication metadata
+        run: node src/scripts/resolve-release.mjs
 
   build-repository:
     name: Build Repository
-    needs: [extension, localization, release-system]
+    needs: [tests, localization, release-system, github-actions]
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -166,7 +188,7 @@ jobs:
   ci-gate:
     name: CI Gate
     if: always()
-    needs: [repository-contracts, extension, github-actions, localization, release-system, build-repository, package-extension, dependency-review]
+    needs: [repository-contracts, extension, tests, github-actions, localization, release-system, build-repository, package-extension, dependency-review]
     runs-on: ubuntu-latest
     steps:
       - name: Require successful CI jobs

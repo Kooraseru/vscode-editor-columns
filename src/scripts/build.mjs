@@ -20,6 +20,7 @@ await Promise.all([
   copyFile("../repo/templates/CONTRIBUTING.md", "../.generated/main/CONTRIBUTING.md"),
   copyFile("../repo/templates/CODE_OF_CONDUCT.md", "../.generated/main/CODE_OF_CONDUCT.md"),
   copyFile("../repo/templates/SECURITY.md", "../.generated/main/SECURITY.md"),
+  copyFile("../repo/templates/AUTOMATION.md", "../.generated/main/AUTOMATION.md"),
   cp("../.github", "../.generated/main/.github", { recursive: true }),
   cp("../releases/records", "../.generated/main/releases", { recursive: true })
 ]);

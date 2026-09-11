@@ -43,6 +43,7 @@
     "clean": "node scripts/clean.mjs",
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
+    "test": "node --test tests/*.test.mjs",
     "package": "node scripts/package.mjs",
     "package:built": "node scripts/package.mjs --from-build",
     "vscode:uninstall": "node ./src/uninstall.js"

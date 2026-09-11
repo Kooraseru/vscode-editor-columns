@@ -7,6 +7,7 @@ releases/**
 repo/**
 CITATION.cff
 CHANGELOG.md
+AUTOMATION.md
 CONTRIBUTING.md
 CODE_OF_CONDUCT.md
 SECURITY.md
