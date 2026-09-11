@@ -1,0 +1,251 @@
+name: Publish
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: publish-source
+  cancel-in-progress: false
+
+jobs:
+  resolve-release:
+    name: Resolve Release
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'source'
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.release.outputs.enabled }}
+      record: ${{ steps.release.outputs.record }}
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      source-date: ${{ steps.source.outputs.date }}
+    steps:
+      - name: Check out validated source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Resolve release metadata
+        id: release
+        run: node src/scripts/resolve-release.mjs
+      - name: Resolve source date
+        id: source
+        run: echo "date=$(git show -s --format=%cs HEAD)" >> "$GITHUB_OUTPUT"
+
+  publish-main:
+    name: Publish Generated State
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'source'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Check out validated source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+      - name: Download validated repository
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: generated-repository
+          path: ${{ runner.temp }}/vscode-editor-columns-main
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+      - name: Replace main with generated repository
+        env:
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if git fetch origin main; then
+            git checkout --force -B main origin/main
+          else
+            git checkout --orphan main
+            git rm --cached -r .
+          fi
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$RUNNER_TEMP/vscode-editor-columns-main/." .
+          git add --all
+          if git diff --cached --quiet; then
+            echo "Generated main is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Publish source @ ${SOURCE_SHA}"
+          git push origin HEAD:main
+
+  validate-tag:
+    name: Validate Tag
+    needs: resolve-release
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.tag.outputs.publish }}
+    steps:
+      - name: Check out validated source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+      - name: Validate publication tag
+        id: tag
+        env:
+          ENABLED: ${{ needs.resolve-release.outputs.enabled }}
+          RELEASE_TAG: ${{ needs.resolve-release.outputs.tag }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ "$ENABLED" != "true" ]; then
+            echo "Publication is not enabled."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          existing="$(git rev-list -n 1 "$RELEASE_TAG")"
+          if [ "$existing" != "$SOURCE_SHA" ]; then
+            echo "Tag $RELEASE_TAG already targets $existing, not $SOURCE_SHA" >&2
+            exit 1
+          fi
+          echo "Release $RELEASE_TAG is already published from this source commit."
+          echo "publish=false" >> "$GITHUB_OUTPUT"
+
+  build-release-notes:
+    name: Build Release Notes
+    needs: [resolve-release, validate-tag]
+    if: needs.validate-tag.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check out validated source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - name: Build release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RECORD: ${{ needs.resolve-release.outputs.record }}
+          VERSION: ${{ needs.resolve-release.outputs.version }}
+          RELEASE_TAG: ${{ needs.resolve-release.outputs.tag }}
+          SOURCE_DATE: ${{ needs.resolve-release.outputs.source-date }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          cp "releases/records/$RECORD.md" "$RUNNER_TEMP/release-notes.md"
+          {
+            echo
+            echo "## Publication Metadata"
+            echo
+            echo "- Extension version: \`$VERSION\`"
+            echo "- Release tag: \`$RELEASE_TAG\`"
+            echo "- Source commit: \`$SOURCE_SHA\`"
+            echo "- Source date: $SOURCE_DATE"
+            echo
+            echo "## Included Pull Requests"
+            gh api "repos/$GITHUB_REPOSITORY/commits/$SOURCE_SHA/pulls" --jq '.[] | "- #\(.number) — \(.title) (@\(.user.login))"'
+          } >> "$RUNNER_TEMP/release-notes.md"
+      - name: Upload release notes
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}/release-notes.md
+          if-no-files-found: error
+
+  publish-github-release:
+    name: Publish GitHub Release
+    needs: [resolve-release, validate-tag, build-release-notes]
+    if: needs.validate-tag.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Download release notes
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}
+          github-token: ${{ github.token }}
+          run-id: ${{ github.run_id }}
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.resolve-release.outputs.tag }}
+          VERSION: ${{ needs.resolve-release.outputs.version }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: >-
+          gh release create "$RELEASE_TAG"
+          --repo "$GITHUB_REPOSITORY"
+          --target "$SOURCE_SHA"
+          --title "VS Code Editor Columns $VERSION"
+          --notes-file "$RUNNER_TEMP/release-notes.md"
+
+  attach-vsix:
+    name: Attach VSIX
+    needs: [resolve-release, validate-tag, publish-github-release]
+    if: needs.validate-tag.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Download validated VSIX files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: vsix-packages
+          path: ${{ runner.temp }}/vsix
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+      - name: Attach VSIX files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.resolve-release.outputs.tag }}
+        run: gh release upload "$RELEASE_TAG" "$RUNNER_TEMP"/vsix/*.vsix --repo "$GITHUB_REPOSITORY" --clobber
+
+  publish-package:
+    name: Publish Package
+    needs: [resolve-release, validate-tag]
+    if: needs.validate-tag.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Download validated VSIX files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: vsix-packages
+          path: ${{ runner.temp }}/vsix
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+      - name: Require Marketplace token
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: test -n "$VSCE_PAT" || { echo "Repository secret VSCE_PAT is required" >&2; exit 1; }
+      - name: Publish VS Code Marketplace package
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: >-
+          npx --yes @vscode/vsce@3.6.0 publish
+          --packagePath "$RUNNER_TEMP/vsix/vscode-editor-columns-${{ needs.resolve-release.outputs.version }}.vsix"
+          --pat "$VSCE_PAT"

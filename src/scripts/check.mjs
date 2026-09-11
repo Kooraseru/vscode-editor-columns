@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
 import { access } from "node:fs/promises";
 
-for (const file of ["extension.js", "provider-host.js", "uninstall.js", "workbench-bridge.js", "debug-extension/extension.js", "scripts/build.mjs", "scripts/package.mjs"]) {
+for (const file of ["extension.js", "provider-host.js", "uninstall.js", "workbench-bridge.js", "debug-extension/extension.js", "scripts/build.mjs", "scripts/package.mjs", "scripts/resolve-release.mjs"]) {
   const result = spawnSync(process.execPath, ["--check", file], { stdio: "inherit" });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
@@ -33,6 +33,7 @@ if (!readmeTemplate.includes('<div align="center">') ||
     !readmeTemplate.includes("{{ locales:repository }}")) {
   throw new Error("The README must center its icon, navigation, and locale table.");
 }
+await access("../repo/templates/AUTOMATION.md");
 const vscodeIgnore = await readFile(".vscodeignore", "utf8");
 if (/^docs\/\*\*/m.test(vscodeIgnore)) {
   throw new Error("Localized documentation must not be excluded from the VSIX.");
@@ -44,4 +45,8 @@ if (releaseFiles.length !== 1 || releaseFiles[0] !== "2026.09.1-regular.md") {
 }
 const release = await readFile(`../releases/records/${releaseFiles[0]}`, "utf8");
 if (!release.startsWith("# 2026.09.1-regular\n")) throw new Error("The release heading must match its canonical ID.");
+const publication = JSON.parse(await readFile("../releases/publication.json", "utf8"));
+if (publication.record !== "2026.09.1-regular" || publication.version !== manifest.version) {
+  throw new Error("Publication metadata must identify the current release record and extension version.");
+}
 console.log("Source and package contract checks passed.");
