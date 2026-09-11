@@ -1,0 +1,12 @@
+extension:
+  - changed-files:
+      - any-glob-to-any-file: "src/**"
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ["README.md", "repo/**", "i18n/**"]
+release:
+  - changed-files:
+      - any-glob-to-any-file: "releases/**"
+automation:
+  - changed-files:
+      - any-glob-to-any-file: [".github/**", ".vscode/**"]
