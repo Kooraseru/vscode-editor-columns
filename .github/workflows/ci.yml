@@ -245,7 +245,7 @@ jobs:
 
   publication:
     name: Publication
-    if: ${{ github.event_name == 'push' && github.ref_name == 'source' }}
+    if: ${{ github.ref_name == 'source' }}
     needs: [ci-gate, package-extension, publication-decision]
     permissions:
       actions: read
@@ -254,6 +254,4 @@ jobs:
       pull-requests: read
     uses: ./.github/workflows/publish.yml
     with:
-      event-name: ${{ github.event_name }}
-      ref-name: ${{ github.ref_name }}
       source-sha: ${{ github.sha }}

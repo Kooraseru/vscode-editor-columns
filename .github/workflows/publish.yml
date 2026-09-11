@@ -3,14 +3,6 @@ name: Publish
 on:
   workflow_call:
     inputs:
-      event-name:
-        description: Event that completed the validated pipeline.
-        required: true
-        type: string
-      ref-name:
-        description: Branch that completed the validated pipeline.
-        required: true
-        type: string
       source-sha:
         description: Validated source commit to publish.
         required: true
@@ -25,30 +17,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  authorize:
-    name: Authorize Publication
-    runs-on: ubuntu-latest
-    outputs:
-      allowed: ${{ steps.policy.outputs.allowed }}
-    steps:
-      - name: Require a source push
-        id: policy
-        env:
-          EVENT_NAME: ${{ inputs.event-name }}
-          REF_NAME: ${{ inputs.ref-name }}
-        run: |
-          if [ "$EVENT_NAME" = "push" ] && [ "$REF_NAME" = "source" ]; then
-            echo "allowed=true" >> "$GITHUB_OUTPUT"
-            echo "Publication authorized for push to source."
-          else
-            echo "allowed=false" >> "$GITHUB_OUTPUT"
-            echo "Publication disabled for event=$EVENT_NAME ref=$REF_NAME."
-          fi
-
   resolve-release:
     name: Resolve Release
-    needs: authorize
-    if: needs.authorize.outputs.allowed == 'true'
     runs-on: ubuntu-latest
     outputs:
       enabled: ${{ steps.release.outputs.enabled }}
@@ -75,8 +45,6 @@ jobs:
 
   publish-main:
     name: Publish Generated State
-    needs: authorize
-    if: needs.authorize.outputs.allowed == 'true'
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -116,8 +84,7 @@ jobs:
 
   validate-tag:
     name: Validate Tag
-    needs: [authorize, resolve-release]
-    if: needs.authorize.outputs.allowed == 'true'
+    needs: resolve-release
     runs-on: ubuntu-latest
     outputs:
       publish: ${{ steps.tag.outputs.publish }}
