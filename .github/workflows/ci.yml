@@ -47,7 +47,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
       - name: Validate extension source
@@ -79,7 +79,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
       - name: Run extension tests
@@ -111,7 +111,7 @@ jobs:
       - name: Set up Lua
         run: sudo apt-get update && sudo apt-get install --yes lua5.4
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
       - name: Validate release records
@@ -129,7 +129,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
       - name: Build generated repository
@@ -142,6 +142,7 @@ jobs:
           name: generated-repository
           path: ${{ runner.temp }}/vscode-editor-columns-main
           if-no-files-found: error
+          include-hidden-files: true
 
   package-extension:
     name: Package Extension
@@ -153,7 +154,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
       - name: Download generated repository
@@ -190,8 +191,11 @@ jobs:
     if: always()
     needs: [repository-contracts, extension, tests, github-actions, localization, release-system, build-repository, package-extension, dependency-review]
     runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.gate.outputs.publish }}
     steps:
       - name: Require successful CI jobs
+        id: gate
         env:
           JOB_RESULTS: ${{ toJSON(needs) }}
           EVENT_NAME: ${{ github.event_name }}
@@ -209,11 +213,16 @@ jobs:
             exit 1
           fi
           echo "All required CI jobs succeeded"
+          if [ "$EVENT_NAME" = "push" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
 
   publication:
     name: Publication
     needs: [ci-gate, package-extension]
-    if: github.event_name == 'push'
+    if: needs.ci-gate.outputs.publish == 'true'
     permissions:
       actions: read
       contents: write
