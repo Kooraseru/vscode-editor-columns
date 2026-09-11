@@ -44,6 +44,7 @@
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
     "package": "node scripts/package.mjs",
+    "package:built": "node scripts/package.mjs --from-build",
     "vscode:uninstall": "node ./src/uninstall.js"
   }
 }

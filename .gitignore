@@ -41,4 +41,5 @@ code/lc3as/lex.lc3.c
 # Extension build output
 node_modules/
 package-lock.json
+!src/package-lock.json
 *.vsix
