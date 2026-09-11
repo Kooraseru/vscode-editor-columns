@@ -254,4 +254,6 @@ jobs:
       pull-requests: read
     uses: ./.github/workflows/publish.yml
     with:
+      event-name: ${{ github.event_name }}
+      ref-name: ${{ github.ref_name }}
       source-sha: ${{ github.sha }}
