@@ -213,7 +213,7 @@ jobs:
   publication:
     name: Publication
     needs: [ci-gate, package-extension]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/source'
+    if: github.event_name == 'push'
     permissions:
       actions: read
       contents: write
