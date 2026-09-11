@@ -8,4 +8,9 @@ runs:
   using: composite
   steps:
     - shell: bash
-      run: lua5.4 repo/build.lua "${{ inputs.destination }}"
+      env:
+        GENERATED_DESTINATION: ${{ inputs.destination }}
+      run: |
+        npm --prefix src run build
+        mkdir -p "$GENERATED_DESTINATION"
+        cp -a .generated/main/. "$GENERATED_DESTINATION/"
