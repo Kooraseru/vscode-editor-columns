@@ -222,7 +222,6 @@ jobs:
   publication:
     name: Publication
     needs: [ci-gate, package-extension]
-    if: needs.ci-gate.outputs.publish == 'true'
     permissions:
       actions: read
       contents: write
@@ -230,4 +229,6 @@ jobs:
       pull-requests: read
     uses: ./.github/workflows/publish.yml
     with:
+      event-name: ${{ github.event_name }}
+      ref-name: ${{ github.ref_name }}
       source-sha: ${{ github.sha }}
