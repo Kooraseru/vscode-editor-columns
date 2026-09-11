@@ -20,7 +20,12 @@ flowchart LR
     NOTES["Build Release Notes<br/>PRs + metadata"]
     GHREL["Publish GitHub Release"]
     ASSET["Attach VSIX"]
-    PKG["Publish Package"]
+    MARKET["Marketplace Deployment"]
+    APPROVAL["Waiting for Approval"]
+    HUMAN["Human Approves"]
+    OIDC["GitHub OIDC"]
+    ENTRA["Microsoft Entra ID"]
+    MARKETPLACE["VS Marketplace"]
     PAGES["Publish Pages<br/>(later)"]
     WIKI["Publish Wiki<br/>(later)"]
 
@@ -46,7 +51,12 @@ flowchart LR
     NOTES --> GHREL
     PACKAGE --> ASSET
     GHREL --> ASSET
-    GATE -->|push to source only| PKG
+    GATE -->|push to source only| MARKET
+    MARKET --> APPROVAL
+    APPROVAL --> HUMAN
+    HUMAN --> OIDC
+    OIDC --> ENTRA
+    ENTRA --> MARKETPLACE
     GATE -.->|later| PAGES
     GATE -.->|later| WIKI
 ```
@@ -59,8 +69,13 @@ successful source push triggers the separate `Publish` workflow, which updates
 Release publication is declared in `releases/publication.json`. The release
 resolver validates the record, extension version, and tag on every run. GitHub
 Release creation, VSIX attachment, and Marketplace publication occur only when
-`enabled` is `true`; Marketplace publication additionally requires the
-`VSCE_PAT` repository secret.
+`enabled` is `true`.
+
+Marketplace deployment uses the human-approved `marketplace` GitHub environment.
+After approval, GitHub OIDC authenticates the job to Microsoft Entra ID with the
+environment variables `AZURE_CLIENT_ID` and `AZURE_TENANT_ID`; `vsce` then uses
+that short-lived Azure credential. No PAT, client secret, or certificate is
+stored or accepted as a fallback.
 
 Pages and Wiki publication are reserved for later work and are not represented
 by placeholder jobs.
