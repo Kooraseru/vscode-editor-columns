@@ -9,8 +9,9 @@ changelog.
 
 `publication.json` binds the current record to the extension version and Git
 tag. Setting `enabled` to `true` authorizes the post-CI publication workflow to
-create that tag and GitHub release, attach the validated VSIX files, and publish
-the extension package. Marketplace deployment is held by the `marketplace`
-environment approval and uses GitHub OIDC with the environment-scoped
-`AZURE_CLIENT_ID` and `AZURE_TENANT_ID` variables. Keep publication disabled
-while a release is still being prepared.
+replace any existing GitHub release and tag with that name, create the release
+from the current validated source commit, attach the validated VSIX files, and
+publish the extension package. Marketplace deployment is held by the
+`marketplace` environment approval and uses GitHub OIDC with the
+environment-scoped `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` variables. Keep
+publication disabled while a release is still being prepared.
