@@ -1,0 +1,4 @@
+locales = [
+  { key = "en-US", language = "English" },
+  { key = "ja-JP", language = "日本語" },
+]

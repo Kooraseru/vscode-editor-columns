@@ -1,0 +1,15 @@
+.generated/**
+.gitignore
+.vscode/**
+.github/**
+i18n/**
+releases/**
+repo/**
+CITATION.cff
+CHANGELOG.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+scripts/**
+node_modules/**
+package-lock.json

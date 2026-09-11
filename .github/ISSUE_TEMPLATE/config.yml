@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/Kooraseru/lcc-lc3/discussions
+    about: Start a GitHub Discussion for support questions and open-ended ideas.

@@ -1,0 +1,105 @@
+name: Validate and publish source
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [source, main]
+  push:
+    branches: [source]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Source contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up repository tooling
+        run: sudo apt-get update && sudo apt-get install --yes lua5.4
+
+      - name: Validate authored branch
+        uses: ./.github/actions/branches
+        with:
+          branch: ${{ github.event.pull_request.base.ref || github.ref_name }}
+
+      - name: Validate source
+        uses: ./.github/actions/validate
+        with:
+          destination: ${{ runner.temp }}/lcc-lc3-generated
+          check-eol: "true"
+
+  publish:
+    name: Publish generated repository
+    needs: validate
+    if: github.event_name == 'push' && github.ref_name == 'source'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up repository tooling
+        run: sudo apt-get update && sudo apt-get install --yes lua5.4
+
+      - name: Build public repository
+        uses: ./.github/actions/build-repo
+        with:
+          destination: ${{ runner.temp }}/lcc-lc3-public
+
+      - name: Select release record
+        id: release
+        run: |
+          version="$(find releases/records -maxdepth 1 -type f -name '*.md' -printf '%f\n' \
+            | sed 's/\.md$//' \
+            | sort -t. -k1,1nr -k2,2nr -k3,3nr \
+            | head -n 1)"
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Replace main with generated repository
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          git fetch origin main
+          git checkout --force -B main origin/main
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$RUNNER_TEMP/lcc-lc3-public/." .
+          git add --all
+          if git diff --cached --quiet; then
+            echo "Generated repository is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Publish source @ ${SOURCE_SHA}"
+          git push origin HEAD:main
+
+      - name: Publish source release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.sha }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
+            gh release delete "$VERSION" --yes || true
+            git push origin --delete "refs/tags/$VERSION"
+          fi
+
+          archive="$RUNNER_TEMP/lcc-lc3.tar.gz"
+          archive_tar="$RUNNER_TEMP/lcc-lc3.tar"
+          git archive --format=tar --prefix="lcc-lc3-$VERSION/src/" "$SOURCE_SHA:code" > "$archive_tar"
+          gzip -n -c "$archive_tar" > "$archive"
+
+          gh release create "$VERSION" "$archive" \
+            --target "$SOURCE_SHA" \
+            --title "$VERSION" \
+            --notes-file "$RUNNER_TEMP/lcc-lc3-public/releases/$VERSION.md"

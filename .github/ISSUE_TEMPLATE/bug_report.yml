@@ -1,0 +1,33 @@
+name: Bug report
+description: Report a reproducible problem in LCC-LC3.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for defects. For a security issue, follow SECURITY.md instead.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Explain the observed behavior and the behavior you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How can we reproduce it?
+      placeholder: |
+        1. Run ...
+        2. Compile ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include OS, compiler version, and LCC-LC3 version or commit.
+    validations:
+      required: true
