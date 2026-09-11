@@ -1,0 +1,19 @@
+name: Validate source
+description: Validate localization catalogs and build a generated repository projection.
+inputs:
+  destination:
+    description: Directory for generated validation output.
+    required: false
+    default: .generated
+  check-eol:
+    description: Run Git's whitespace check in a native Linux checkout.
+    required: false
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GENERATED_DESTINATION: ${{ inputs.destination }}
+        CHECK_EOL: ${{ inputs.check-eol }}
+      run: lua5.4 "$GITHUB_ACTION_PATH/main.lua"

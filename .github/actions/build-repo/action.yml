@@ -1,0 +1,11 @@
+name: Build generated repository
+description: Build the public repository projection from canonical source.
+inputs:
+  destination:
+    description: Directory to replace with the generated projection.
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: lua5.4 repo/build.lua "${{ inputs.destination }}"

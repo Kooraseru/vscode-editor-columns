@@ -1,0 +1,4 @@
+# These inputs are executed or parsed by POSIX build tooling, including WSL.
+code/configure text eol=lf
+code/**/*.md text eol=lf
+repo/generate.sh text eol=lf
