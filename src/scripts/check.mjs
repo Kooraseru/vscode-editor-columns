@@ -15,6 +15,7 @@ if (manifest.name !== "vscode-editor-columns" || manifest.publisher !== "Koorase
 if (manifest.license !== "ISC") throw new Error("The package must use the repository's ISC license.");
 if (manifest.icon !== "assets/goofyaah.png") throw new Error("The extension icon must reference the authored asset.");
 await access("../assets/goofyaah.png");
+await access("package-lock.json");
 
 const debugManifest = JSON.parse(await readFile("debug-extension/package.json", "utf8"));
 if (!debugManifest.extensionDependencies?.includes("Kooraseru.vscode-editor-columns")) {
