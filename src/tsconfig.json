@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "preserveSymlinks": true,
+    "typeRoots": ["../.heap/cache/node_modules/@types"],
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "node16",
+    "moduleDetection": "force",
+    "rootDir": "runtime",
+    "outDir": "../.heap/cache/compiled/main",
+    "types": ["node", "vscode"],
+    "strict": false,
+    "noEmitOnError": true,
+    "sourceMap": true
+  },
+  "include": ["runtime/extension.ts", "runtime/provider-host.ts", "runtime/bridge-protocol.ts", "runtime/bridge-transport.ts", "runtime/workbench-compatibility.ts", "runtime/uninstall.ts", "runtime/workbench-admin.ts"]
+}

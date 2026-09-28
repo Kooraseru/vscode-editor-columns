@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "preserveSymlinks": true,
+    "typeRoots": ["../.heap/cache/node_modules/@types"],
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "rootDir": "tests",
+    "outDir": "../.heap/cache/tests",
+    "types": ["node"],
+    "esModuleInterop": true,
+    "strict": true,
+    "noCheck": true,
+    "noEmitOnError": true,
+    "sourceMap": true
+  },
+  "include": ["tests/**/*.test.ts"]
+}

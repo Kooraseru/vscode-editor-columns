@@ -2,21 +2,12 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build generated example",
-      "type": "shell",
-      "command": "npm --prefix src run package",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Validate source",
-      "type": "shell",
-      "command": "npm --prefix src run check",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
+      "label": "Build local publish preview",
+      "detail": "Install missing build tools into .heap/cache, then validate and package locally in .heap/preview. No publication occurs.",
+      "type": "process",
+      "command": "node",
+      "args": ["src/scripts/run-package.cjs"],
+      "options": { "cwd": "${workspaceFolder}" },
       "problemMatcher": []
     }
   ]

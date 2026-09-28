@@ -1,11 +1,22 @@
 <div align="center">
   <img src="{{ link:icon }}" width="256" alt="VS Code Editor Columns">
   <h1>{{ l10n:repository.title }}</h1>
-  <table><tr><td><a href="#overview">{{ l10n:repository.navigation.overview }}</a></td><td><a href="#provider-api">{{ l10n:repository.navigation.api }}</a></td><td><a href="#lifecycle">{{ l10n:repository.navigation.lifecycle }}</a></td><td><a href="#license">{{ l10n:repository.navigation.license }}</a></td></tr></table>
+  <table><tr><td><a href="#download">{{ l10n:repository.navigation.download }}</a></td><td><a href="#overview">{{ l10n:repository.navigation.overview }}</a></td><td><a href="#provider-api">{{ l10n:repository.navigation.api }}</a></td><td><a href="#lifecycle">{{ l10n:repository.navigation.lifecycle }}</a></td><td><a href="#license">{{ l10n:repository.navigation.license }}</a></td></tr></table>
   {{ locales:repository }}
 </div>
 
 {{ l10n:repository.summary }}
+
+<a id="download"></a>
+## {{ l10n:repository.download }}
+
+{{ l10n:repository.download_text }} [Visual Studio Marketplace]({{ link:marketplace }}).
+
+```bash
+code --install-extension Kooraseru.vscode-editor-columns@0.1.0 --force
+```
+
+{{ l10n:repository.download_wsl_note }}
 
 <a id="overview"></a>
 ## {{ l10n:repository.overview }}

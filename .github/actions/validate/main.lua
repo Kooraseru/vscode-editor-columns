@@ -5,7 +5,7 @@ package.path = root .. "/?.lua;" .. root .. "/.github/actions/?.lua;" .. package
 local command = require("lib.command")
 local required = {
   "src", "i18n/locales.toml", "i18n/repository.toml", "i18n/releases.toml", "i18n/render.lua",
-  "repo/build.lua", "repo/config.toml", "repo/templates/README.md",
+  "repo/config.toml", "repo/templates/README.md",
   "releases/build.lua", "releases/validate.lua", "releases/test.lua", "releases/records",
   "LICENSE", "CITATION.cff", ".github/actions",
 }

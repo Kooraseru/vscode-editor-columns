@@ -4,6 +4,9 @@ ja-JP = "VS Code Editor Columns"
 [summary.values]
 en-US = "Adds extension-controlled interactive columns to VS Code's native text editor without replacing the editor or modifying document text."
 ja-JP = "VS Code のネイティブテキストエディターを置き換えたり文書テキストを変更したりせず、拡張機能が制御する対話型の列を追加します。"
+[navigation.download.values]
+en-US = "Download"
+ja-JP = "ダウンロード"
 [navigation.overview.values]
 en-US = "Overview"
 ja-JP = "概要"
@@ -16,6 +19,15 @@ ja-JP = "ライフサイクル"
 [navigation.license.values]
 en-US = "License"
 ja-JP = "ライセンス"
+[download.values]
+en-US = "Download"
+ja-JP = "ダウンロード"
+[download_text.values]
+en-US = "Download VS Code Editor Columns from its"
+ja-JP = "VS Code Editor Columns は次のリンクからダウンロードできます："
+[download_wsl_note.values]
+en-US = "On Windows, run this command from PowerShell or Command Prompt. Running `code` inside WSL targets the remote Linux VS Code Server instead of the local Windows desktop installation required by the workbench bridge."
+ja-JP = "Windows では、このコマンドを PowerShell またはコマンド プロンプトから実行してください。WSL 内で `code` を実行すると、ワークベンチブリッジに必要なローカルの Windows デスクトップ版ではなく、リモートの Linux VS Code Server が対象になります。"
 [overview.values]
 en-US = "Overview"
 ja-JP = "概要"
@@ -41,8 +53,8 @@ ja-JP = "ローカルワークベンチブリッジは Editor Columns の拡張�
 en-US = "Compatibility"
 ja-JP = "互換性"
 [compatibility_text.values]
-en-US = "The current bridge is version-checked for VS Code 1.137.0. VS Code may show an installation-integrity warning while the bridge is installed."
-ja-JP = "現在のブリッジは VS Code 1.137.0 用にバージョン確認されています。ブリッジのインストール中は VS Code がインストール整合性の警告を表示する場合があります。"
+en-US = "The bridge checks for the editor structure it needs when installed. For protected VS Code installations, Authorize Setup uses the Linux system privilege prompt; Copy Setup Command is available for other systems or as a fallback. VS Code may show an installation-integrity warning while the bridge is installed."
+ja-JP = "ブリッジはインストール時に必要なエディター構造を確認します。保護された VS Code インストールでは、Linux の「Authorize Setup」でシステムの権限確認を利用できます。他の環境や失敗時には「Copy Setup Command」を利用できます。ブリッジのインストール中は VS Code がインストール整合性の警告を表示する場合があります。"
 [license_heading.values]
 en-US = "License"
 ja-JP = "ライセンス"

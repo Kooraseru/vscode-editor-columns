@@ -1,0 +1,118 @@
+$header-height: 24px;
+
+.vscode-editor-columns-host {
+  position: relative !important;
+  overflow: hidden !important;
+
+  > .monaco-editor {
+    left: var(--vscode-editor-columns-width) !important;
+    top: $header-height !important;
+    width: calc(100% - var(--vscode-editor-columns-width)) !important;
+    height: calc(100% - $header-height) !important;
+
+    // Monaco's workbench layout can retain its old pixel width after the
+    // editor element narrows. Keep its native minimap and scroll area inside.
+    .overflow-guard {
+      width: 100% !important;
+    }
+
+    .monaco-scrollable-element.editor-scrollable {
+      width: calc(100% - var(--vscode-editor-columns-gutter-width, 0px) - var(--vscode-editor-columns-minimap-width, 0px)) !important;
+    }
+
+    .minimap {
+      left: auto !important;
+      right: 0 !important;
+    }
+  }
+}
+
+.vscode-editor-columns-surface {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: var(--vscode-editor-background);
+  border-right: 1px solid var(--vscode-panel-border);
+  color: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family, var(--monaco-monospace-font));
+
+  input {
+    position: absolute;
+    box-sizing: border-box;
+    padding: 0 7px;
+    color: var(--vscode-editor-foreground);
+    background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+    border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+    border-radius: 999px;
+    font: inherit;
+    outline: none;
+    text-align: center;
+
+    &:focus-visible {
+      border-color: var(--vscode-focusBorder);
+      outline: 1px solid var(--vscode-focusBorder);
+      outline-offset: 0;
+    }
+
+    &:disabled {
+      color: var(--vscode-editor-foreground);
+      background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+      opacity: 1;
+    }
+  }
+}
+
+.vscode-editor-columns-column-header,
+.vscode-editor-columns-source-header {
+  position: absolute;
+  top: 0;
+  height: $header-height;
+  box-sizing: border-box;
+  padding: 0 6px;
+  overflow: hidden;
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: $header-height - 1px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vscode-editor-columns-column-header {
+  z-index: 2;
+  border-right: 1px solid var(--vscode-panel-border);
+}
+
+.vscode-editor-columns-sash {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  z-index: 30;
+  cursor: col-resize;
+  touch-action: none;
+
+  &:hover,
+  &:active {
+    background: var(--vscode-sash-hoverBorder, var(--vscode-focusBorder));
+  }
+}
+
+.vscode-editor-columns-source-header {
+  z-index: 21;
+  left: var(--vscode-editor-columns-width);
+  right: 0;
+}
+
+@media (forced-colors: active) {
+  .vscode-editor-columns-surface,
+  .vscode-editor-columns-column-header,
+  .vscode-editor-columns-source-header {
+    border-color: CanvasText;
+  }
+}
