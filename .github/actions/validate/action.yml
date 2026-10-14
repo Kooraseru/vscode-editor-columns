@@ -4,7 +4,7 @@ inputs:
   destination:
     description: Directory for generated validation output.
     required: false
-    default: .generated
+    default: .heap/preview
   check-eol:
     description: Run Git's whitespace check in a native Linux checkout.
     required: false

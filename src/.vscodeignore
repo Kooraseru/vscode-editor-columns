@@ -1,4 +1,4 @@
-.generated/**
+.heap/preview/**
 .gitignore
 .vscode/**
 .github/**
@@ -13,4 +13,5 @@ CODE_OF_CONDUCT.md
 SECURITY.md
 scripts/**
 node_modules/**
+!node_modules/ws/**
 package-lock.json

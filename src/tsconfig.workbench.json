@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "preserveSymlinks": true,
+    "target": "ES2022",
+    "module": "None",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": [],
+    "outFile": "../.heap/cache/compiled/main/workbench-bridge.js",
+    "strict": false,
+    "noEmitOnError": true,
+    "sourceMap": true
+  },
+  "files": ["runtime/workbench-bridge.ts"]
+}
